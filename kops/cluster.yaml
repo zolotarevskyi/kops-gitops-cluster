@@ -6,7 +6,7 @@ spec:
   cloudProvider: aws
   kubernetesVersion: "1.29.0"
 
-  # Домен для API сервера
+ # # Домен для API сервера
   api:
     dns: {}
     loadBalancer:
