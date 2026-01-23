@@ -40,7 +40,7 @@ resource "aws_route53_zone" "kops_zone" {
 # 3. IAM User для Kops
 # --------------------------
 resource "aws_iam_user" "kops_user" {
-  name = "kops-admin"
+  name = "kops-admin-roman"
 }
 
 resource "aws_iam_user_policy_attachment" "admin_policy" {
