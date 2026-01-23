@@ -1,0 +1,33 @@
+apiVersion: kops.k8s.io/v1alpha2
+kind: Cluster
+metadata:
+  name: k8s.asap.im
+spec:
+  cloudProvider: aws
+  kubernetesVersion: "1.29.0"
+
+  # Домен для API сервера
+  api:
+    dns: {}
+    loadBalancer:
+      type: Public
+
+  # Регіон і availability zones
+  subnets:
+    - name: eu-central-1a
+      type: Public
+      zone: eu-central-1a
+    - name: eu-central-1b
+      type: Public
+      zone: eu-central-1b
+
+  # S3 bucket де зберігається стан кластера
+  configStore: s3://asap-kops-state-roman
+
+  # Топологія
+  topology:
+    masters: public
+    nodes: public
+
+  networking:
+    cni: "calico"
