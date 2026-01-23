@@ -1,0 +1,12 @@
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  name: master-eu-central-1a
+spec:
+  role: Master
+  image: ami-0f7204385566b32d0
+  machineType: t3.medium
+  minSize: 1
+  maxSize: 1
+  subnets:
+    - eu-central-1a
