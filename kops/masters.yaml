@@ -2,6 +2,8 @@ apiVersion: kops.k8s.io/v1alpha2
 kind: InstanceGroup
 metadata:
   name: master-eu-central-1a
+  labels:
+    kops.k8s.io/cluster: k8s.asap.im
 spec:
   role: Master
   image: kope.io/k8s-1.29-debian12-amd64
