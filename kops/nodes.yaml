@@ -6,7 +6,6 @@ metadata:
     kops.k8s.io/cluster: k8s.asap.im
 spec:
   role: Node
-  image: kope.io/k8s-1.29-debian12-amd64
   machineType: t3.small
   minSize: 1
   maxSize: 1
