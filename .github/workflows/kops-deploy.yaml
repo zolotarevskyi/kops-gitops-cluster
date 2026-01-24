@@ -1,9 +1,7 @@
 name: Deploy Kops Cluster
 
 on:
-  push:
-    paths:
-      - "kops/**"
+  workflow_dispatch:
 
 jobs:
   deploy:
