@@ -2,12 +2,13 @@ apiVersion: kops.k8s.io/v1alpha2
 kind: InstanceGroup
 metadata:
   name: nodes
+  labels:
+    kops.k8s.io/cluster: k8s.asap.im
 spec:
   role: Node
-  image: ami-0f7204385566b32d0
+  image: kope.io/k8s-1.29-debian12-amd64
   machineType: t3.small
-  minSize: 2
-  maxSize: 2
+  minSize: 1
+  maxSize: 1
   subnets:
     - eu-central-1a
-    - eu-central-1b
