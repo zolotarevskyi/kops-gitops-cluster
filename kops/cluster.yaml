@@ -6,31 +6,28 @@ spec:
   cloudProvider: aws
   kubernetesVersion: "1.29.0"
 
-  # DNS для API сервера
   api:
     dns: {}
     loadBalancer:
       type: Public
 
-  # Підмережі (збігаються з AWS region eu-central-1)
   subnets:
     - name: eu-central-1a
       type: Public
       zone: eu-central-1a
 
-  # S3 bucket з Terraform (стан Kops)
   configStore: s3://asap-kops-state-roman
 
-  # Все публічне — найпростіший варіант
   topology:
     masters: public
     nodes: public
 
-  # CNI → Calico (мінімальна конфігурація)
+  # 🟩 Повністю правильний блок networking
   networking:
+    networkCIDR: 172.20.0.0/16
+    nonMasqueradeCIDR: 100.64.0.0/10
     calico: {}
 
-  # etcd — мінімальний, для тестового кластера
   etcdClusters:
     - name: main
       etcdMembers:
