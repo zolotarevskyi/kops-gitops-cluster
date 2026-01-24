@@ -6,8 +6,8 @@ metadata:
     kops.k8s.io/cluster: k8s.asap.im
 spec:
   role: Master
-  image: kope.io/k8s-1.29-debian12-amd64
   machineType: t3.small
+  image: ami-07c0c52d11a9a2b0f
   minSize: 1
   maxSize: 1
   subnets:
