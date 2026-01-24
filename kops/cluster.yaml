@@ -6,8 +6,13 @@ spec:
   cloudProvider: aws
   kubernetesVersion: "1.29.0"
 
+  networkCIDR: 172.20.0.0/16
+  nonMasqueradeCIDR: 100.64.0.0/10
+
+  networking:
+    calico: {}
+
   api:
-    dns: {}
     loadBalancer:
       type: Public
 
@@ -16,17 +21,9 @@ spec:
       type: Public
       zone: eu-central-1a
 
-  configStore: s3://asap-kops-state-roman
-
   topology:
     masters: public
     nodes: public
-
-  # 🟩 Повністю правильний блок networking
-  networking:
-    networkCIDR: 172.20.0.0/16
-    nonMasqueradeCIDR: 100.64.0.0/10
-    calico: {}
 
   etcdClusters:
     - name: main
