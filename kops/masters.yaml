@@ -7,7 +7,6 @@ metadata:
 spec:
   role: Master
   machineType: t3.small
-  image: ami-07c0c52d11a9a2b0f
   minSize: 1
   maxSize: 1
   subnets:
