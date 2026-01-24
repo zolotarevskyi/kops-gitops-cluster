@@ -27,3 +27,18 @@ spec:
 
   networking:
     calico: {}
+
+  etcdClusters:
+    - name: main
+      etcdMembers:
+        - name: a
+          instanceGroup: master-eu-central-1a
+        - name: b
+          instanceGroup: master-eu-central-1b
+
+    - name: events
+      etcdMembers:
+        - name: a
+          instanceGroup: master-eu-central-1a
+        - name: b
+          instanceGroup: master-eu-central-1b
