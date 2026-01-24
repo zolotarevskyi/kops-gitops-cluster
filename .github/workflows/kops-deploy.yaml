@@ -37,9 +37,8 @@ jobs:
 
     - name: Create cluster definitions
       run: |
-        kops create -f kops/cluster.yaml
-        kops create -f kops/masters.yaml
-        kops create -f kops/nodes.yaml
+        kops update cluster --name $NAME --yes
+
 
     - name: Apply cluster changes
       run: |
