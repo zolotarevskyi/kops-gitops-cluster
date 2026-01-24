@@ -30,17 +30,17 @@ jobs:
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
 
-    - name: Export variables for Kops
+    - name: Set env vars
       run: |
         echo "KOPS_STATE_STORE=${{ secrets.KOPS_STATE_STORE }}" >> $GITHUB_ENV
         echo "NAME=${{ secrets.KOPS_CLUSTER_NAME }}" >> $GITHUB_ENV
 
-    - name: Create cluster definitions
+    - name: Sync cluster config (Git → S3)
       run: |
-        kops update cluster --name $NAME --yes
-
+        kops replace -f kops/cluster.yaml --force
+        kops replace -f kops/masters.yaml --force
+        kops replace -f kops/nodes.yaml --force
 
     - name: Apply cluster changes
       run: |
         kops update cluster --name $NAME --yes
-
