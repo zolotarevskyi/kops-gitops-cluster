@@ -4,8 +4,8 @@ metadata:
   name: master-eu-central-1a
 spec:
   role: Master
-  image: ami-0f7204385566b32d0
-  machineType: t3.medium
+  image: kope.io/k8s-1.29-debian12-amd64
+  machineType: t3.small
   minSize: 1
   maxSize: 1
   subnets:
