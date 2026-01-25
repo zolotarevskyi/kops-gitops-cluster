@@ -1,4 +1,3 @@
-
 # --------------------------
 # 1. Знаходимо VPC kOps-кластера
 # --------------------------
@@ -10,7 +9,7 @@ data "aws_vpc" "kops_vpc" {
 }
 
 # --------------------------
-# 2. Беремо будь-яку subnet у цій VPC
+# 2. Беремо public subnet у цій VPC
 # --------------------------
 data "aws_subnets" "kops_subnets" {
   filter {
@@ -24,17 +23,16 @@ data "aws_subnets" "kops_subnets" {
   }
 }
 
-
 # --------------------------
 # 3. Security Group для Admin VM
 # --------------------------
 resource "aws_security_group" "admin_vm_sg" {
   name        = "admin-vm-sg-roman"
-  description = "Admin VM access (SSH from anywhere)"
+  description = "Admin VM access (SSH)"
   vpc_id      = data.aws_vpc.kops_vpc.id
 
   ingress {
-    description = "SSH from anywhere (0.0.0.0/0)"
+    description = "SSH access"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -50,16 +48,17 @@ resource "aws_security_group" "admin_vm_sg" {
   }
 
   tags = {
-    Name = "admin-vm-sg-roman"
+    Name              = "admin-vm-sg-roman"
+    KubernetesCluster = "k8s.asap.im"
   }
 }
 
 # --------------------------
-# 4. Admin EC2 instance
+# 4. Ubuntu 22.04 AMI
 # --------------------------
 data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"]
+  owners      = ["099720109477"] # Canonical
 
   filter {
     name   = "name"
@@ -77,17 +76,51 @@ data "aws_ami" "ubuntu" {
   }
 }
 
+# --------------------------
+# 5. Admin EC2 instance
+# --------------------------
 resource "aws_instance" "admin_vm" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.micro"
-  subnet_id              = data.aws_subnets.kops_subnets.ids[0]
-  vpc_security_group_ids = [aws_security_group.admin_vm_sg.id]
-  key_name               = "roman-mac"
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = "t3.micro"
+  subnet_id                   = data.aws_subnets.kops_subnets.ids[0]
+  vpc_security_group_ids      = [aws_security_group.admin_vm_sg.id]
+  key_name                    = "roman-mac"
+  associate_public_ip_address = true
 
-  associate_public_ip_address = true   # ← рекомендую додати
+  user_data = <<-EOF
+    #!/bin/bash
+    set -e
+
+    # --- system update ---
+    apt-get update -y
+
+    # --- basic tools ---
+    apt-get install -y curl unzip ca-certificates apt-transport-https gnupg lsb-release
+
+    # --- install kubectl ---
+    curl -LO https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
+    chmod +x kubectl
+    mv kubectl /usr/local/bin/kubectl
+
+    # --- install kops ---
+    curl -LO https://github.com/kubernetes/kops/releases/download/v1.29.0/kops-linux-amd64
+    chmod +x kops-linux-amd64
+    mv kops-linux-amd64 /usr/local/bin/kops
+
+    # --- install AWS CLI ---
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    ./aws/install
+
+    # --- kubectl autocomplete & alias (for ubuntu user) ---
+    sudo -u ubuntu bash -c "echo 'source <(kubectl completion bash)' >> ~/.bashrc"
+    sudo -u ubuntu bash -c "echo 'alias k=kubectl' >> ~/.bashrc"
+
+  EOF
 
   tags = {
-    Name = "k8s-admin-vm-roman"
-    Role = "kubernetes-admin-roman"
+    Name              = "k8s-admin-vm-roman"
+    Role              = "kubernetes-admin-roman"
+    KubernetesCluster = "k8s.asap.im"
   }
 }
