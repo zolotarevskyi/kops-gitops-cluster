@@ -1,17 +1,13 @@
-name: Destroy Kops Cluster and Terraform Infrastructure
+name: Destroy Kops Cluster
 
 on:
   workflow_dispatch:
 
 jobs:
-  destroy-all:
+  destroy:
     runs-on: ubuntu-latest
 
     steps:
-
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v3
       with:
@@ -25,31 +21,10 @@ jobs:
         chmod +x kops-linux-amd64
         sudo mv kops-linux-amd64 /usr/local/bin/kops
 
-    - name: Export cluster name & state store
+    - name: Export Kops env
       run: |
         echo "KOPS_STATE_STORE=${{ secrets.KOPS_STATE_STORE }}" >> $GITHUB_ENV
-        echo "NAME=${{ secrets.KOPS_CLUSTER_NAME }}" >> $GITHUB_ENV
 
-    - name: Delete Kops cluster
+    - name: Delete cluster
       run: |
-        echo "Deleting Kops cluster: $NAME"
-        kops delete cluster --name $NAME --yes
-
-    - name: Wait for AWS to clean up resources
-      run: |
-        echo "Waiting 180 seconds for AWS EC2, AutoScaling, LaunchTemplates, VPC cleanup..."
-        sleep 180
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-
-    - name: Terraform Init
-      working-directory: terraform
-      run: terraform init
-
-    - name: Terraform Destroy
-      working-directory: terraform
-      run: terraform destroy -auto-approve
-
-    - name: Success Message
-      run: echo "ALL INFRASTRUCTURE SUCCESSFULLY DESTROYED ✔"
+        kops delete cluster --name ${{ secrets.KOPS_CLUSTER_NAME }} --yes
