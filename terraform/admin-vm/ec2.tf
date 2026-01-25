@@ -59,7 +59,7 @@ resource "aws_security_group" "admin_vm_sg" {
 # --------------------------
 data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"]   # Canonical (офіційний Ubuntu)
+  owners      = ["099720109477"] # Canonical
 
   filter {
     name   = "name"
@@ -73,14 +73,13 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_instance" "admin_vm" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
-}
-
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t3.micro"
   subnet_id              = data.aws_subnets.kops_subnets.ids[0]
   vpc_security_group_ids = [aws_security_group.admin_vm_sg.id]
+  key_name               = "roman-mac"
 
-  key_name = "roman-mac"
+  associate_public_ip_address = true   # ← рекомендую додати
 
   tags = {
     Name = "k8s-admin-vm-roman"
