@@ -57,9 +57,25 @@ resource "aws_security_group" "admin_vm_sg" {
 # --------------------------
 # 4. Admin EC2 instance
 # --------------------------
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"]   # Canonical (офіційний Ubuntu)
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ebs-gp3/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 resource "aws_instance" "admin_vm" {
-  ami           = "ami-0a5d9b7f2f1c4c9a3" # Ubuntu 22.04 eu-central-1
+  ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
+}
 
   subnet_id              = data.aws_subnets.kops_subnets.ids[0]
   vpc_security_group_ids = [aws_security_group.admin_vm_sg.id]
