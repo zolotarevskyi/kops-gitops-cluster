@@ -1,0 +1,46 @@
+name: Deploy Kops Cluster
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-central-1
+
+    - name: Install Kops
+      run: |
+        curl -LO https://github.com/kubernetes/kops/releases/download/v1.29.0/kops-linux-amd64
+        chmod +x kops-linux-amd64
+        sudo mv kops-linux-amd64 /usr/local/bin/kops
+
+    - name: Install kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
+
+    - name: Set env vars
+      run: |
+        echo "KOPS_STATE_STORE=${{ secrets.KOPS_STATE_STORE }}" >> $GITHUB_ENV
+        echo "NAME=${{ secrets.KOPS_CLUSTER_NAME }}" >> $GITHUB_ENV
+
+    - name: Sync cluster config (Git → S3)
+      run: |
+        kops replace -f kops/cluster.yaml --force
+        kops replace -f kops/masters.yaml --force
+        kops replace -f kops/nodes.yaml --force
+
+    - name: Apply cluster changes
+      run: |
+        kops update cluster --name $NAME --yes
