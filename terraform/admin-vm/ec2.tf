@@ -85,6 +85,7 @@ resource "aws_instance" "admin_vm" {
   subnet_id                   = data.aws_subnets.kops_subnets.ids[0]
   vpc_security_group_ids      = [aws_security_group.admin_vm_sg.id]
   key_name                    = "roman-mac"
+  iam_instance_profile        = aws_iam_instance_profile.admin_vm_profile.name
   associate_public_ip_address = true
 
   user_data = <<-EOF
