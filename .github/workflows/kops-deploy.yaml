@@ -35,8 +35,27 @@ jobs:
         echo "KOPS_STATE_STORE=${{ secrets.KOPS_STATE_STORE }}" >> $GITHUB_ENV
         echo "NAME=${{ secrets.KOPS_CLUSTER_NAME }}" >> $GITHUB_ENV
 
+    - name: Check & create S3 bucket if missing
+      id: s3check
+      run: |
+        BUCKET="${KOPS_STATE_STORE#s3://}"
+
+        echo "Checking if bucket '$BUCKET' exists..."
+
+        if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "Bucket does not exist. Creating..."
+          aws s3api create-bucket \
+            --bucket "$BUCKET" \
+            --region eu-central-1 \
+            --create-bucket-configuration LocationConstraint=eu-central-1
+
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Check if cluster config exists in S3
-      id: check
+      id: configcheck
       run: |
         if aws s3 ls "$KOPS_STATE_STORE/$NAME/config" >/dev/null 2>&1; then
           echo "exists=true" >> $GITHUB_OUTPUT
@@ -46,10 +65,11 @@ jobs:
 
     - name: Print decision
       run: |
-        echo "Cluster config exists? ${{ steps.check.outputs.exists }}"
+        echo "S3 bucket exists: ${{ steps.s3check.outputs.exists }}"
+        echo "Cluster config exists: ${{ steps.configcheck.outputs.exists }}"
 
     - name: Create cluster (only if config does NOT exist)
-      if: steps.check.outputs.exists == 'false'
+      if: steps.configcheck.outputs.exists == 'false'
       run: |
         echo "Creating new cluster..."
         kops create -f kops/cluster.yaml
@@ -57,9 +77,9 @@ jobs:
         kops create -f kops/nodes.yaml
 
     - name: Replace cluster config (only if config exists)
-      if: steps.check.outputs.exists == 'true'
+      if: steps.configcheck.outputs.exists == 'true'
       run: |
-        echo "Cluster already exists — syncing with Git configs..."
+        echo "Cluster exists — applying GitOps sync..."
         kops replace -f kops/cluster.yaml --force
         kops replace -f kops/masters.yaml --force
         kops replace -f kops/nodes.yaml --force
