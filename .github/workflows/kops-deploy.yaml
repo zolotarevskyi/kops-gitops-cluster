@@ -28,23 +28,42 @@ jobs:
       run: |
         curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
         chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
+        sudo mv kubectl /usr/local/bin/kubectl
 
-    - name: Set environment variables
+    - name: Export env vars
       run: |
         echo "KOPS_STATE_STORE=${{ secrets.KOPS_STATE_STORE }}" >> $GITHUB_ENV
         echo "NAME=${{ secrets.KOPS_CLUSTER_NAME }}" >> $GITHUB_ENV
 
-    - name: Create cluster definitions (NEW CLUSTER)
+    - name: Check if cluster config exists in S3
+      id: check
       run: |
+        if aws s3 ls "$KOPS_STATE_STORE/$NAME/config" >/dev/null 2>&1; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Print decision
+      run: |
+        echo "Cluster config exists? ${{ steps.check.outputs.exists }}"
+
+    - name: Create cluster (only if config does NOT exist)
+      if: steps.check.outputs.exists == 'false'
+      run: |
+        echo "Creating new cluster..."
         kops create -f kops/cluster.yaml
         kops create -f kops/masters.yaml
         kops create -f kops/nodes.yaml
 
-    - name: Apply changes and build cluster
+    - name: Replace cluster config (only if config exists)
+      if: steps.check.outputs.exists == 'true'
+      run: |
+        echo "Cluster already exists — syncing with Git configs..."
+        kops replace -f kops/cluster.yaml --force
+        kops replace -f kops/masters.yaml --force
+        kops replace -f kops/nodes.yaml --force
+
+    - name: Apply cluster changes
       run: |
         kops update cluster --name $NAME --yes
-
-    - name: Validate cluster (optional)
-      run: |
-        kops validate cluster --name $NAME || true
