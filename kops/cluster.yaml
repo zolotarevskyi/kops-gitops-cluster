@@ -16,6 +16,9 @@ spec:
     loadBalancer:
       type: Public
 
+  kubernetesApiAccess:
+    - 0.0.0.0/0
+
   subnets:
     - name: eu-central-1a
       type: Public
