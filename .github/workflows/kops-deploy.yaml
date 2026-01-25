@@ -1,16 +1,13 @@
-name: Deploy Kops Cluster
+name: Destroy Kops Cluster
 
 on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  destroy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v3
       with:
@@ -24,66 +21,10 @@ jobs:
         chmod +x kops-linux-amd64
         sudo mv kops-linux-amd64 /usr/local/bin/kops
 
-    - name: Install kubectl
-      run: |
-        curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/kubectl
-
-    - name: Export env vars
+    - name: Export Kops env
       run: |
         echo "KOPS_STATE_STORE=${{ secrets.KOPS_STATE_STORE }}" >> $GITHUB_ENV
-        echo "NAME=${{ secrets.KOPS_CLUSTER_NAME }}" >> $GITHUB_ENV
 
-    - name: Check & create S3 bucket if missing
-      id: s3check
+    - name: Delete cluster
       run: |
-        BUCKET="${KOPS_STATE_STORE#s3://}"
-
-        echo "Checking if bucket '$BUCKET' exists..."
-
-        if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
-          echo "exists=true" >> $GITHUB_OUTPUT
-        else
-          echo "Bucket does not exist. Creating..."
-          aws s3api create-bucket \
-            --bucket "$BUCKET" \
-            --region eu-central-1 \
-            --create-bucket-configuration LocationConstraint=eu-central-1
-
-          echo "exists=false" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Check if cluster config exists in S3
-      id: configcheck
-      run: |
-        if aws s3 ls "$KOPS_STATE_STORE/$NAME/config" >/dev/null 2>&1; then
-          echo "exists=true" >> $GITHUB_OUTPUT
-        else
-          echo "exists=false" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Print decision
-      run: |
-        echo "S3 bucket exists: ${{ steps.s3check.outputs.exists }}"
-        echo "Cluster config exists: ${{ steps.configcheck.outputs.exists }}"
-
-    - name: Create cluster (only if config does NOT exist)
-      if: steps.configcheck.outputs.exists == 'false'
-      run: |
-        echo "Creating new cluster..."
-        kops create -f kops/cluster.yaml
-        kops create -f kops/masters.yaml
-        kops create -f kops/nodes.yaml
-
-    - name: Replace cluster config (only if config exists)
-      if: steps.configcheck.outputs.exists == 'true'
-      run: |
-        echo "Cluster exists — applying GitOps sync..."
-        kops replace -f kops/cluster.yaml --force
-        kops replace -f kops/masters.yaml --force
-        kops replace -f kops/nodes.yaml --force
-
-    - name: Apply cluster changes
-      run: |
-        kops update cluster --name $NAME --yes
+        kops delete cluster --name ${{ secrets.KOPS_CLUSTER_NAME }} --yes
