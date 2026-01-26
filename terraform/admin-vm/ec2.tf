@@ -58,7 +58,7 @@ resource "aws_security_group" "admin_vm_sg" {
 # --------------------------
 data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"] # Canonical
+  owners      = ["099720109477"]
 
   filter {
     name   = "name"
@@ -89,35 +89,59 @@ resource "aws_instance" "admin_vm" {
   associate_public_ip_address = true
 
   user_data = <<-EOF
-    #!/bin/bash
-    set -e
+#!/bin/bash
+set -e
 
-    # --- system update ---
-    apt-get update -y
+# --------------------------
+# Hostname (PERMANENT)
+# --------------------------
+hostnamectl set-hostname admin-vm
+echo "127.0.1.1 admin-vm" >> /etc/hosts
 
-    # --- basic tools ---
-    apt-get install -y curl unzip ca-certificates apt-transport-https gnupg lsb-release
+# --------------------------
+# System update
+# --------------------------
+apt-get update -y
 
-    # --- install kubectl ---
-    curl -LO https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
-    chmod +x kubectl
-    mv kubectl /usr/local/bin/kubectl
+# --------------------------
+# Basic tools
+# --------------------------
+apt-get install -y \
+  curl \
+  unzip \
+  ca-certificates \
+  apt-transport-https \
+  gnupg \
+  lsb-release
 
-    # --- install kops ---
-    curl -LO https://github.com/kubernetes/kops/releases/download/v1.29.0/kops-linux-amd64
-    chmod +x kops-linux-amd64
-    mv kops-linux-amd64 /usr/local/bin/kops
+# --------------------------
+# Install kubectl
+# --------------------------
+curl -LO https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
+chmod +x kubectl
+mv kubectl /usr/local/bin/kubectl
 
-    # --- install AWS CLI ---
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-    unzip awscliv2.zip
-    ./aws/install
+# --------------------------
+# Install kops
+# --------------------------
+curl -LO https://github.com/kubernetes/kops/releases/download/v1.29.0/kops-linux-amd64
+chmod +x kops-linux-amd64
+mv kops-linux-amd64 /usr/local/bin/kops
 
-    # --- kubectl autocomplete & alias (for ubuntu user) ---
-    sudo -u ubuntu bash -c "echo 'source <(kubectl completion bash)' >> ~/.bashrc"
-    sudo -u ubuntu bash -c "echo 'alias k=kubectl' >> ~/.bashrc"
+# --------------------------
+# Install AWS CLI
+# --------------------------
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+./aws/install
 
-  EOF
+# --------------------------
+# kubectl UX for ubuntu user
+# --------------------------
+sudo -u ubuntu bash -c "echo 'source <(kubectl completion bash)' >> ~/.bashrc"
+sudo -u ubuntu bash -c "echo 'alias k=kubectl' >> ~/.bashrc"
+
+EOF
 
   tags = {
     Name              = "k8s-admin-vm-roman"
