@@ -1,0 +1,4 @@
+aws_region       = "eu-central-1"
+kops_state_bucket = "asap-kops-state-roman"
+kops_subdomain    = "k8s.asap.im"
+github_actions_ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGY6tSl38g9RJvA/OzZLM6iIh+WFTTPWkJPP6myBkrwG github-actions"
