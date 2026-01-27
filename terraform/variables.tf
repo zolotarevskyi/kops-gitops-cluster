@@ -12,3 +12,9 @@ variable "kops_subdomain" {
   type        = string
   description = "Hosted zone for the subdomain, e.g., k8s.example.com"
 }
+
+variable "github_actions_ssh_public_key" {
+  description = "Public SSH key for GitHub Actions"
+  type        = string
+}
+
