@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v3
       with:
@@ -24,7 +27,12 @@ jobs:
     - name: Export Kops env
       run: |
         echo "KOPS_STATE_STORE=${{ secrets.KOPS_STATE_STORE }}" >> $GITHUB_ENV
+        echo "NAME=${{ secrets.KOPS_CLUSTER_NAME }}" >> $GITHUB_ENV
+
+    - name: Confirm cluster exists
+      run: |
+        kops get cluster --name $NAME
 
     - name: Delete cluster
       run: |
-        kops delete cluster --name ${{ secrets.KOPS_CLUSTER_NAME }} --yes
+        kops delete cluster --name $NAME --yes
