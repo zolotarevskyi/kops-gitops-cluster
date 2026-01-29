@@ -5,7 +5,7 @@ metadata:
 spec:
   type: LoadBalancer
   selector:
-    app: vproapp
+    app: nginx
   ports:
   - port: 80
     targetPort: 8080
