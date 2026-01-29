@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginx-lb
+  name: vproapp-lb
 spec:
   type: LoadBalancer
   selector:
-    app: test3
+    app: vproapp
   ports:
   - port: 80
     targetPort: 8080
