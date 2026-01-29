@@ -42,8 +42,12 @@ jobs:
 
       - name: Delete Pod and Service
         run: |
-          kubectl delete -f k8s/service.yaml --ignore-not-found
-          kubectl delete -f k8s/pod.yaml --ignore-not-found
+          kubectl delete -f k8s/pod1.yaml --ignore-not-found
+          kubectl delete -f k8s/service1-ClusterIP.yaml --ignore-not-found
+          kubectl delete -f k8s/pod2.yaml --ignore-not-found
+          kubectl delete -f k8s/service2-NodePort.yaml --ignore-not-found
+          kubectl delete -f k8s/pod3.yaml --ignore-not-found
+          kubectl delete -f k8s/service3-LoadBalancer.yaml --ignore-not-found
 
       - name: Verify cleanup
         run: |
