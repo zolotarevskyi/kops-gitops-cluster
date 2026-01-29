@@ -95,16 +95,17 @@ jobs:
         echo "Waiting for Kubernetes control plane to bootstrap..."
         sleep 120
 
-    # 1️⃣1️⃣ Валідація кластера (nodes + API)
-    - name: Validate cluster
-      run: |
-        kops validate cluster --name $NAME --wait 10m
 
-    # 1️⃣2️⃣ Експортуємо kubeconfig (GitOps way)
+    # 1️⃣1️⃣ Експортуємо kubeconfig (GitOps way)
     - name: Export kubeconfig
       run: |
         mkdir -p ~/.kube
         kops export kubecfg --name $NAME --admin
+
+    # 1️⃣2️⃣ Валідація кластера (nodes + API)
+    - name: Validate cluster
+      run: |
+        kops validate cluster --name $NAME --wait 10m
 
     # 1️⃣3️⃣ Швидка перевірка доступу
     - name: Verify cluster access
