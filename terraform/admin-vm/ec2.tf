@@ -23,7 +23,7 @@ resource "aws_security_group" "admin_vm_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] # залишаємо як просив
   }
 
   egress {
@@ -36,7 +36,7 @@ resource "aws_security_group" "admin_vm_sg" {
 
   tags = {
     Name              = "admin-vm-sg-roman"
-    KubernetesCluster = "k8s.asap.im"
+    KubernetesCluster = var.kops_cluster_name
   }
 }
 
@@ -57,13 +57,13 @@ resource "aws_instance" "admin_vm" {
 set -e
 
 # --------------------------
-# Hostname (permanent)
+# Hostname
 # --------------------------
 hostnamectl set-hostname admin-vm
 echo "127.0.1.1 admin-vm" >> /etc/hosts
 
 # --------------------------
-# SSH for GitHub Actions
+# SSH
 # --------------------------
 mkdir -p /home/ubuntu/.ssh
 chmod 700 /home/ubuntu/.ssh
@@ -109,7 +109,18 @@ unzip awscliv2.zip
 ./aws/install
 
 # --------------------------
-# kubectl UX (ubuntu user)
+# kubeconfig (CRITICAL)
+# --------------------------
+export KOPS_STATE_STORE=s3://${var.kops_state_bucket}
+
+sudo -u ubuntu mkdir -p /home/ubuntu/.kube
+
+sudo -u ubuntu bash -c "
+kops export kubecfg --name ${var.kops_cluster_name} --admin
+"
+
+# --------------------------
+# kubectl UX
 # --------------------------
 sudo -u ubuntu bash -c "echo 'alias k=kubectl' >> ~/.bashrc"
 sudo -u ubuntu bash -c "echo 'source <(kubectl completion bash)' >> ~/.bashrc"
@@ -119,6 +130,6 @@ EOF
   tags = {
     Name              = "k8s-admin-vm-roman"
     Role              = "kubernetes-admin-roman"
-    KubernetesCluster = "k8s.asap.im"
+    KubernetesCluster = var.kops_cluster_name
   }
 }
