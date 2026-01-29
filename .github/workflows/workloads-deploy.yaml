@@ -46,8 +46,12 @@ jobs:
 
       - name: Deploy Pod and Service
         run: |
-          kubectl apply -f k8s/pod.yaml
-          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/pod1.yaml
+          kubectl apply -f k8s/service1-ClusterIP.yaml
+          kubectl apply -f k8s/pod2.yaml
+          kubectl apply -f k8s/service2-NodePort.yaml
+          kubectl apply -f k8s/pod3.yaml
+          kubectl apply -f k8s/service3-LoadBalancer.yaml
 
       - name: Verify resources
         run: |
