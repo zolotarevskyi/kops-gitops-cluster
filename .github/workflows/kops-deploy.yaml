@@ -8,9 +8,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1️⃣ Забираємо репозиторій
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # 2️⃣ AWS доступ (обовʼязково для kOps)
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v3
       with:
@@ -18,43 +20,45 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: eu-central-1
 
-    - name: Install Kops
+    # 3️⃣ Ставимо kOps
+    - name: Install kOps
       run: |
         curl -LO https://github.com/kubernetes/kops/releases/download/v1.29.0/kops-linux-amd64
         chmod +x kops-linux-amd64
         sudo mv kops-linux-amd64 /usr/local/bin/kops
 
+    # 4️⃣ Ставимо kubectl (для validate + debug)
     - name: Install kubectl
       run: |
-        curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
+        curl -LO https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/kubectl
 
+    # 5️⃣ Експортуємо env для kOps
     - name: Export env vars
       run: |
         echo "KOPS_STATE_STORE=${{ secrets.KOPS_STATE_STORE }}" >> $GITHUB_ENV
         echo "NAME=${{ secrets.KOPS_CLUSTER_NAME }}" >> $GITHUB_ENV
 
+    # 6️⃣ Перевіряємо / створюємо S3 bucket для state
     - name: Check & create S3 bucket if missing
-      id: s3check
       run: |
         BUCKET="${KOPS_STATE_STORE#s3://}"
 
         echo "Checking if bucket '$BUCKET' exists..."
 
         if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
-          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "Bucket exists"
         else
           echo "Bucket does not exist. Creating..."
           aws s3api create-bucket \
             --bucket "$BUCKET" \
             --region eu-central-1 \
             --create-bucket-configuration LocationConstraint=eu-central-1
-
-          echo "exists=false" >> $GITHUB_OUTPUT
         fi
 
-    - name: Check if cluster config exists in S3
+    # 7️⃣ Перевіряємо, чи вже є cluster config у state
+    - name: Check if cluster config exists
       id: configcheck
       run: |
         if aws s3 ls "$KOPS_STATE_STORE/$NAME/config" >/dev/null 2>&1; then
@@ -63,41 +67,46 @@ jobs:
           echo "exists=false" >> $GITHUB_OUTPUT
         fi
 
-    - name: Print decision
-      run: |
-        echo "S3 bucket exists: ${{ steps.s3check.outputs.exists }}"
-        echo "Cluster config exists: ${{ steps.configcheck.outputs.exists }}"
-
-    - name: Create cluster (only if config does NOT exist)
+    # 8️⃣ Створення або replace конфігів (GitOps)
+    - name: Create cluster config (first run)
       if: steps.configcheck.outputs.exists == 'false'
       run: |
-        echo "Creating new cluster..."
+        echo "Creating new cluster config..."
         kops create -f kops/cluster.yaml
         kops create -f kops/masters.yaml
         kops create -f kops/nodes.yaml
 
-    - name: Replace cluster config (only if config exists)
+    - name: Replace cluster config (GitOps sync)
       if: steps.configcheck.outputs.exists == 'true'
       run: |
-        echo "Cluster exists — applying GitOps sync..."
+        echo "Cluster config exists — syncing..."
         kops replace -f kops/cluster.yaml --force
         kops replace -f kops/masters.yaml --force
         kops replace -f kops/nodes.yaml --force
 
+    # 9️⃣ Реальне створення / оновлення AWS інфраструктури
     - name: Apply cluster changes
       run: |
         kops update cluster --name $NAME --yes
 
+    # 🔟 ДУЖЕ ВАЖЛИВО: даємо control-plane піднятись
+    - name: Wait for control plane bootstrap
+      run: |
+        echo "Waiting for Kubernetes control plane to bootstrap..."
+        sleep 120
+
+    # 1️⃣1️⃣ Валідація кластера (nodes + API)
     - name: Validate cluster
       run: |
         kops validate cluster --name $NAME --wait 10m
 
-    - name: Export kubeconfig for CI
+    # 1️⃣2️⃣ Експортуємо kubeconfig (GitOps way)
+    - name: Export kubeconfig
       run: |
         mkdir -p ~/.kube
         kops export kubecfg --name $NAME --admin
 
-    - name: Verify API access
+    # 1️⃣3️⃣ Швидка перевірка доступу
+    - name: Verify cluster access
       run: |
         kubectl get nodes
-
