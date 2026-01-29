@@ -118,6 +118,7 @@ export KOPS_STATE_STORE=s3://${var.kops_state_bucket}
 sudo -u ubuntu mkdir -p /home/ubuntu/.kube
 
 sudo -u ubuntu bash -c "
+export KOPS_STATE_STORE=s3://${var.kops_state_bucket}
 kops export kubecfg --name ${var.kops_cluster_name} --admin
 "
 
