@@ -70,6 +70,8 @@ chmod 700 /home/ubuntu/.ssh
 
 cat << 'KEY' > /home/ubuntu/.ssh/authorized_keys
 ${var.github_actions_ssh_public_key}
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSLWNVhDooJgpwQ1VJ5Urjpx0/GALphxRPSnI2YhR/9ikMqqBQ9SbqYgq0nbTEXc4xK28pUfY67L5spp5gB15P4aTuEzLx+NL1GmEv3/9j41vAZOKuU3lD3zJjQO8gat/iDjg5nfkriJ4CLPtbuocLi0omdlc5dE/DiOaw6FE87tWjeFK6ot0upAZ+BSTuuV/8IVnLi2EAT3t8NL0Lip2IWhsfNtZ/Vjaj5JX4hXsE6ECuHNS+DFoOH4pDW9sWYS9b/P15otPGNnPqn485wv1ZDsaztxHk3iWN7Z6s8PsAG9ycA7RivA6rFTc8LJ/uLJ9ZAVzutvC3r9K1Y1xLu32Z roman-mac
+
 KEY
 
 chmod 600 /home/ubuntu/.ssh/authorized_keys
