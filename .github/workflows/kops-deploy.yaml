@@ -87,3 +87,17 @@ jobs:
     - name: Apply cluster changes
       run: |
         kops update cluster --name $NAME --yes
+
+    - name: Validate cluster
+      run: |
+        kops validate cluster --name $NAME --wait 10m
+
+    - name: Export kubeconfig for CI
+      run: |
+        mkdir -p ~/.kube
+        kops export kubecfg --name $NAME --admin
+
+    - name: Verify API access
+      run: |
+        kubectl get nodes
+
